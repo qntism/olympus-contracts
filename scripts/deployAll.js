@@ -194,6 +194,114 @@ async function main() {
     console.log( "Staking Helper " + stakingHelper.address);
     console.log("DAI Bond: " + daiBond.address);
     console.log("Frax Bond: " + fraxBond.address);
+
+    try {
+      await hre.run("verify:verify", {
+        address: treasury.address,
+        constructorArguments: [
+          vcashAddress, daiAddress, 0, 0
+        ],
+      })
+      console.log("treasury verify success");
+    } catch (e) {
+      console.log("treasury verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: olympusBondingCalculator.address,
+        constructorArguments: [
+          vcashAddress
+        ],
+      })
+      console.log("distributor verify success");
+    } catch (e) {
+      console.log("distributor verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: distributor.address,
+        constructorArguments: [
+          treasury.address, vcashAddress, epochLengthInBlocks, firstEpochBlock
+        ],
+      })
+      console.log("olympusBondingCalculator verify success");
+    } catch (e) {
+      console.log("olympusBondingCalculator verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: sOHM.address,
+        constructorArguments: [
+          
+        ],
+      })
+      console.log("sOHM verify success");
+    } catch (e) {
+      console.log("sOHM verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: staking.address,
+        constructorArguments: [
+          vcashAddress, sOHM.address, epochLengthInBlocks, firstEpochNumber, firstEpochBlock
+        ],
+      })
+      console.log("staking verify success");
+    } catch (e) {
+      console.log("staking verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: stakingWarmup.address,
+        constructorArguments: [
+          staking.address, sOHM.address
+        ],
+      })
+      console.log("stakingWarmup verify success");
+    } catch (e) {
+      console.log("stakingWarmup verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: stakingHelper.address,
+        constructorArguments: [
+          staking.address, vcashAddress
+        ],
+      })
+      console.log("stakingHelper verify success");
+    } catch (e) {
+      console.log("stakingHelper verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: daiBond.address,
+        constructorArguments: [
+          vcashAddress, daiAddress, treasury.address, deployer.address, zeroAddress
+        ],
+      })
+      console.log("daiBond verify success");
+    } catch (e) {
+      console.log("daiBond verify error");
+    }
+
+    try {
+      await hre.run("verify:verify", {
+        address: fraxBond.address,
+        constructorArguments: [
+          vcashAddress, wethAddress, treasury.address, deployer.address, zeroAddress
+        ],
+      })
+      console.log("fraxBond verify success");
+    } catch (e) {
+      console.log("fraxBond verify error");
+    }
 }
 
 main()
