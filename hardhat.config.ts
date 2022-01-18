@@ -62,7 +62,7 @@ const config: HardhatUserConfig = {
       accounts: [`0x${process.env.PRIVATE_KEY}`]
     },
     kovan: {
-      url: `https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`,
+      url: `https://kovan.infura.io/v3/${process.env.KOVAN_ID}`,
       accounts: [`0x${process.env.PRIVATE_KEY}`],
       // gasPrice: 4000000000,
       timeout: 20000000
@@ -77,7 +77,7 @@ const config: HardhatUserConfig = {
     },
     localhost: {
       url: 'http://localhost:8545',
-      accounts: ['0xb691908d124156c332d773be81b39dcb70d14946105c1cd0f189dc86f7748f27']
+      accounts: ['']
     }
   },
   paths: {
