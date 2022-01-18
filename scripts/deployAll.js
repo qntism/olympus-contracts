@@ -4,10 +4,6 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account: " + deployer.address);
 
-  // const DAI = "0xB2180448f8945C8Cc8AE9809E67D6bd27d8B2f2C";
-  // const FRAX = "0x2f7249cb599139e560f0c81c269ab9b04799e453";
-  // const LUSD = "0x45754df05aa6305114004358ecf8d04ff3b84e26";
-
   const bondCapicity = "10000000000000000000000";
   const bondBCV = "369";
   const bondVestingLength = "23000";
@@ -42,8 +38,6 @@ async function main() {
   const firstEpochNumber = "550";
   const firstBlockNumber = "9505000";
 
-  // const OHM = await ethers.getContractFactory("OlympusERC20Token");
-  // const ohm = await OHM.deploy(authority.address);
   const VCASH = await ethers.getContractFactory("VCASH");
   const vcash = await VCASH.deploy(authority.address);
   console.log("vcash deployed");
@@ -91,6 +85,7 @@ async function main() {
 
   const BondTeller = await ethers.getContractFactory("BondTeller");
   const bondTeller = await BondTeller.deploy(bondDepository.address, staking.address, olympusTreasury.address, vcash.address, sOHM.address, authority.address);
+
   console.log("DAI: " + dai.address);
   console.log("FRAX: " + frax.address);
   console.log("Olympus Authority: ", authority.address);
@@ -105,25 +100,16 @@ async function main() {
   console.log("BondTeller: " + bondTeller.address);
 
   await authority.deployed()
-  console.log("authority deploy verified");
   await vcash.deployed()
-  console.log("vcash deploy verified");
   await sOHM.deployed()
-  console.log("vcash deploy verified");
   await gOHM.deployed()
-  console.log("gohm deploy verified");
   await olympusTreasury.deployed()
-  console.log("treasury deploy verified");
   await staking.deployed()
-  console.log("staking deploy verified");
   await distributor.deployed()
-  console.log("distributor deploy verified");
   await bondDepository.deployed()
-  console.log("depository deploy verified");
   await bondingCalculator.deployed()
-  console.log("calculator deploy verified");
   await bondTeller.deployed()
-  console.log("teller deploy verified");
+  console.log("all deploy verified");
 
   await authority.pushVault(olympusTreasury.address, true); // replaces ohm.setVault(treasury.address)
   // Initialize sohm
@@ -157,7 +143,7 @@ async function main() {
     })
     console.log("authority verify success");
   } catch (e) {
-    console.log("authority verify error");
+    console.log(e);
   }
 
   try {
@@ -169,7 +155,7 @@ async function main() {
     });
     console.log("vcash verify success");
   } catch (e) {
-    console.log("vcash verify error");
+    console.log(e);
   }
 
   try {
@@ -177,7 +163,8 @@ async function main() {
       address: sOHM.address,
       constructorArguments: [
       ],
-    })
+    });
+    console.log("sOHM verify success");
   } catch (e) {
     console.log(e);
   }
@@ -189,7 +176,8 @@ async function main() {
         migrator,
         sOHM.address
       ],
-    })
+    });
+    console.log("gOHM verify success");
   } catch (e) {
     console.log(e)
   }
@@ -202,7 +190,8 @@ async function main() {
         '0',
         authority.address
       ],
-    })
+    });
+    console.log("treasury verify success");
   } catch (e) {
     console.log(e)
   }
@@ -219,7 +208,8 @@ async function main() {
         firstBlockNumber,
         authority.address
       ],
-    })
+    });
+    console.log("staking verify success");
   } catch (e) {
     console.log(e)
   }
@@ -233,7 +223,8 @@ async function main() {
         staking.address,
         authority.address
       ],
-    })
+    });
+    console.log("distributor verify success");
   } catch (e) {
     console.log(e)
   }
@@ -246,7 +237,8 @@ async function main() {
         olympusTreasury.address,
         authority.address
       ],
-    })
+    });
+    console.log("depository verify success");
   } catch (e) {
     console.log(e)
   }
@@ -257,7 +249,8 @@ async function main() {
       constructorArguments: [
         vcash.address,
       ],
-    })
+    });
+    console.log("calculator verify success");
   } catch (e) {
     console.log(e)
   }
@@ -273,7 +266,8 @@ async function main() {
         sOHM.address,
         authority.address
       ],
-    })
+    });
+    console.log("bondTeller verify success");
   } catch (e) {
     console.log(e)
   }
@@ -284,7 +278,8 @@ async function main() {
       constructorArguments: [
         0
       ],
-    })
+    });
+    console.log("dai verify success");
   } catch (e) {
     console.log(e)
   }
@@ -295,7 +290,8 @@ async function main() {
       constructorArguments: [
         0
       ],
-    })
+    });
+    console.log("frax verify success");
   } catch (e) {
     console.log(e)
   }
