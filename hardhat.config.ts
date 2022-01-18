@@ -62,7 +62,7 @@ const config: HardhatUserConfig = {
       accounts: [`0x${process.env.PRIVATE_KEY}`]
     },
     kovan: {
-      url: `https://kovan.infura.io/v3/${process.env.KOVAN_ID}`,
+      url: `https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`,
       accounts: [`0x${process.env.PRIVATE_KEY}`],
       // gasPrice: 4000000000,
       timeout: 20000000

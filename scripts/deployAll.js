@@ -1,29 +1,9 @@
 const { ethers } = require("hardhat");
+require("dotenv").config();
 
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account: " + deployer.address);
-
-  const bondCapicity = "10000000000000000000000";
-  const bondBCV = "369";
-  const bondVestingLength = "23000";
-  const bondExpiration = "100000000000000";
-  const bondConclusion = "100000000000000";
-  const minBondPrice = "1000";
-  const maxBondPayout = "100";
-  const maxBondDebt = "1000000000000000";
-  const intialBondDebt = "0";
-
-  //deploy mock stable token
-  const DAI = await ethers.getContractFactory("DAI");
-  const dai = await DAI.deploy(0);
-  await dai.mint(deployer.address, "10000000000000000000000");
-  console.log("dai deployed");
-
-  const FRAX = await ethers.getContractFactory("FRAX");
-  const frax = await FRAX.deploy(0);
-  await frax.mint(deployer.address, "10000000000000000000000");
-  console.log("frax deployed");
 
   const Authority = await ethers.getContractFactory("OlympusAuthority");
   const authority = await Authority.deploy(
@@ -32,27 +12,19 @@ async function main() {
     deployer.address,
     deployer.address
   );
-  console.log("Authority deployed");
   const migrator = deployer.address;
-
-  const firstEpochNumber = "550";
-  const firstBlockNumber = "9505000";
 
   const VCASH = await ethers.getContractFactory("VCASH");
   const vcash = await VCASH.deploy(authority.address);
-  console.log("vcash deployed");
 
   const SOHM = await ethers.getContractFactory("sOlympus");
   const sOHM = await SOHM.deploy();
-  console.log("sohm deployed");
 
   const GOHM = await ethers.getContractFactory("gOHM");
   const gOHM = await GOHM.deploy(migrator, sOHM.address);
-  console.log("gohm deployed");
 
   const OlympusTreasury = await ethers.getContractFactory("OlympusTreasury");
   const olympusTreasury = await OlympusTreasury.deploy(vcash.address, "0", authority.address);
-  console.log("treasury deployed");
 
   const OlympusStaking = await ethers.getContractFactory("OlympusStaking");
   const staking = await OlympusStaking.deploy(
@@ -60,8 +32,8 @@ async function main() {
     sOHM.address,
     gOHM.address,
     "2200",
-    firstEpochNumber,
-    firstBlockNumber,
+    process.env.FIRST_EPOCH_NUMBER,
+    process.env.FIRST_BLOCK_NUMBER,
     authority.address
   );
   console.log("staking deployed");
@@ -86,8 +58,6 @@ async function main() {
   const BondTeller = await ethers.getContractFactory("BondTeller");
   const bondTeller = await BondTeller.deploy(bondDepository.address, staking.address, olympusTreasury.address, vcash.address, sOHM.address, authority.address);
 
-  console.log("DAI: " + dai.address);
-  console.log("FRAX: " + frax.address);
   console.log("Olympus Authority: ", authority.address);
   console.log("VCASH: " + vcash.address);
   console.log("sOhm: " + sOHM.address);
@@ -109,7 +79,6 @@ async function main() {
   await bondDepository.deployed()
   await bondingCalculator.deployed()
   await bondTeller.deployed()
-  console.log("all deploy verified");
 
   await authority.pushVault(olympusTreasury.address, true); // replaces ohm.setVault(treasury.address)
   // Initialize sohm
@@ -118,18 +87,13 @@ async function main() {
   await sOHM.initialize(staking.address, olympusTreasury.address);
   await staking.setDistributor(distributor.address);
   await staking.setDistributor(distributor.address);
-  console.log("initial setting performed");
 
   await bondDepository.setTeller(bondTeller.address);
-  console.log("set bondTeller")
 
-  //bond depository setting
-  await bondDepository.addBond(dai.address, bondingCalculator.address, bondCapicity, false);
-  await bondDepository.addBond(frax.address, bondingCalculator.address, bondCapicity, false);
-  console.log("tokens added to bond depository");
-  await bondDepository.setTerms(0, bondBCV, true, bondVestingLength, bondExpiration, bondConclusion, minBondPrice, maxBondPayout, maxBondDebt, intialBondDebt);
-  await bondDepository.setTerms(1, bondBCV, true, bondVestingLength, bondExpiration, bondConclusion, minBondPrice, maxBondPayout, maxBondDebt, intialBondDebt);
-  console.log("deploy finished");
+  await bondDepository.addBond(process.env.DAI_ADDRESS, bondingCalculator.address, process.env.BOND_CAPICITY, false);
+  await bondDepository.addBond(process.env.WETH_ADDRESS, bondingCalculator.address, process.env.BOND_CAPICITY, false);
+  await bondDepository.setTerms(0, process.env.BOND_BCV, true, process.env.BOND_VESTING_LENGTH, process.env.BOND_EXPIRATION, process.env.BOND_CONCLUSION, process.env.MIN_BOND_PRICE, process.env.MAX_BOND_PAYOUT, process.env.MAX_BOND_DEBT, process.env.INITIAL_BOND_DEBT);
+  await bondDepository.setTerms(1, process.env.BOND_BCB, true, process.env.BOND_VESTING_LENGTH, process.env.BOND_EXPIRATION, process.env.BOND_CONCLUSION, process.env.MIN_BOND_PRICE, process.env.MAX_BOND_PAYOUT, process.env.MAX_BOND_DEBT, process.env.INITIAL_BOND_DEBT);
 
   try {
     await hre.run("verify:verify", {
@@ -204,8 +168,8 @@ async function main() {
         sOHM.address,
         gOHM.address,
         "2200",
-        firstEpochNumber,
-        firstBlockNumber,
+        process.env.FIRST_EPOCH_NUMBER,
+        process.env.FIRST_BLOCK_NUMBER,
         authority.address
       ],
     });
@@ -268,30 +232,6 @@ async function main() {
       ],
     });
     console.log("bondTeller verify success");
-  } catch (e) {
-    console.log(e)
-  }
-
-  try {
-    await hre.run("verify:verify", {
-      address: dai.address,
-      constructorArguments: [
-        0
-      ],
-    });
-    console.log("dai verify success");
-  } catch (e) {
-    console.log(e)
-  }
-
-  try {
-    await hre.run("verify:verify", {
-      address: frax.address,
-      constructorArguments: [
-        0
-      ],
-    });
-    console.log("frax verify success");
   } catch (e) {
     console.log(e)
   }
