@@ -10,6 +10,10 @@ async function main() {
     const [deployer, MockDAO] = await ethers.getSigners();
     console.log('Deploying contracts with the account: ' + deployer.address);
 
+    //mock stable coin address
+    const daiAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+    const wethAddress = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
+
     // Initial staking index
     const initialIndex = '7675210820';
 
@@ -28,17 +32,11 @@ async function main() {
     // Ethereum 0 address, used when toggling changes in treasury
     const zeroAddress = '0x0000000000000000000000000000000000000000';
 
-    // Large number for approval for Frax and DAI
-    const largeApproval = '100000000000000000000000000000000';
-
-    // Initial mint for Frax and DAI (10,000,000)
-    const initialMint = '10000000000000000000000000';
-
     // DAI bond BCV
     const daiBondBCV = '369';
 
-    // Frax bond BCV
-    const fraxBondBCV = '690';
+    // WETH bond BCV
+    const wethBondBCV = '690';
 
     // Bond vesting length in blocks. 33110 ~ 5 days
     const bondVestingLength = '33110';
@@ -56,36 +54,35 @@ async function main() {
     const maxBondDebt = '1000000000000000';
 
     // Initial Bond debt
-    const intialBondDebt = '0'
+    const intialBondDebt = '0';
 
-    // Deploy OHM
-    const OHM = await ethers.getContractFactory('OlympusERC20Token');
-    const ohm = await OHM.deploy();
+    // Depoly Authority
+    const Authority = await ethers.getContractFactory("OlympusAuthority");
+    const authority = await Authority.deploy(
+        deployer.address,
+        deployer.address,
+        deployer.address,
+        deployer.address
+    );
 
-    // Deploy DAI
-    const DAI = await ethers.getContractFactory('DAI');
-    const dai = await DAI.deploy( 0 );
-
-    // Deploy Frax
-    const Frax = await ethers.getContractFactory('FRAX');
-    const frax = await Frax.deploy( 0 );
-
-    // Deploy 10,000,000 mock DAI and mock Frax
-    await dai.mint( deployer.address, initialMint );
-    await frax.mint( deployer.address, initialMint );
+    // Deploy VCASH
+    const VCASH = await ethers.getContractFactory('VCASH');
+    const vcash = await VCASH.deploy(authority.address);
+    await vcash.setMinter(deployer.address);
+    await vcash.mint(deployer.address, "10000000000000000000000");
 
     // Deploy treasury
     //@dev changed function in treaury from 'valueOf' to 'valueOfToken'... solidity function was coflicting w js object property name
     const Treasury = await ethers.getContractFactory('MockOlympusTreasury'); 
-    const treasury = await Treasury.deploy( ohm.address, dai.address, frax.address, 0 );
+    const treasury = await Treasury.deploy( vcash.address, daiAddress, 0 );
 
     // Deploy bonding calc
     const OlympusBondingCalculator = await ethers.getContractFactory('OlympusBondingCalculator');
-    const olympusBondingCalculator = await OlympusBondingCalculator.deploy( ohm.address );
+    const olympusBondingCalculator = await OlympusBondingCalculator.deploy( vcash.address );
 
     // Deploy staking distributor
     const Distributor = await ethers.getContractFactory('Distributor');
-    const distributor = await Distributor.deploy(treasury.address, ohm.address, epochLengthInBlocks, firstEpochBlock);
+    const distributor = await Distributor.deploy(treasury.address, vcash.address, epochLengthInBlocks, firstEpochBlock);
 
     // Deploy sOHM
     const SOHM = await ethers.getContractFactory('sOlympus');
@@ -93,7 +90,7 @@ async function main() {
 
     // Deploy Staking
     const Staking = await ethers.getContractFactory('OlympusStaking');
-    const staking = await Staking.deploy( ohm.address, sOHM.address, epochLengthInBlocks, firstEpochNumber, firstEpochBlock );
+    const staking = await Staking.deploy( vcash.address, sOHM.address, epochLengthInBlocks, firstEpochNumber, firstEpochBlock );
 
     // Deploy staking warmpup
     const StakingWarmpup = await ethers.getContractFactory('StakingWarmup');
@@ -101,31 +98,31 @@ async function main() {
 
     // Deploy staking helper
     const StakingHelper = await ethers.getContractFactory('StakingHelper');
-    const stakingHelper = await StakingHelper.deploy(staking.address, ohm.address);
+    const stakingHelper = await StakingHelper.deploy(staking.address, vcash.address);
 
     // Deploy DAI bond
-    //@dev changed function call to Treasury of 'valueOf' to 'valueOfToken' in BondDepository due to change in Treausry contract
+    // @dev changed function call to Treasury of 'valueOf' to 'valueOfToken' in BondDepository due to change in Treausry contract
     const DAIBond = await ethers.getContractFactory('MockOlympusBondDepository');
-    const daiBond = await DAIBond.deploy(ohm.address, dai.address, treasury.address, MockDAO.address, zeroAddress);
+    const daiBond = await DAIBond.deploy(vcash.address, daiAddress, treasury.address, deployer.address, zeroAddress);
 
-    // Deploy Frax bond
-    //@dev changed function call to Treasury of 'valueOf' to 'valueOfToken' in BondDepository due to change in Treausry contract
-    const FraxBond = await ethers.getContractFactory('MockOlympusBondDepository');
-    const fraxBond = await FraxBond.deploy(ohm.address, frax.address, treasury.address, MockDAO.address, zeroAddress);
+    // Deploy Weth bond
+    // @dev changed function call to Treasury of 'valueOf' to 'valueOfToken' in BondDepository due to change in Treausry contract
+    const WethBond = await ethers.getContractFactory('MockOlympusBondDepository');
+    const wethBond = await WethBond.deploy(vcash.address, wethAddress, treasury.address, deployer.address, zeroAddress);
 
-    // queue and toggle DAI and Frax bond reserve depositor
+    // queue and toggle DAI and Weth bond reserve depositor
     await treasury.queue('0', daiBond.address);
-    await treasury.queue('0', fraxBond.address);
+    await treasury.queue('2', wethBond.address);
     await treasury.toggle('0', daiBond.address, zeroAddress);
-    await treasury.toggle('0', fraxBond.address, zeroAddress);
+    await treasury.toggle('2', wethBond.address, zeroAddress);
 
-    // Set DAI and Frax bond terms
+    // Set DAI and Weth bond terms
     await daiBond.initializeBondTerms(daiBondBCV, bondVestingLength, minBondPrice, maxBondPayout, bondFee, maxBondDebt, intialBondDebt);
-    await fraxBond.initializeBondTerms(fraxBondBCV, bondVestingLength, minBondPrice, maxBondPayout, bondFee, maxBondDebt, intialBondDebt);
+    await wethBond.initializeBondTerms(wethBondBCV, bondVestingLength, minBondPrice, maxBondPayout, bondFee, maxBondDebt, intialBondDebt);
 
-    // Set staking for DAI and Frax bond
+    // Set staking for DAI and Weth bond
     await daiBond.setStaking(staking.address, stakingHelper.address);
-    await fraxBond.setStaking(staking.address, stakingHelper.address);
+    await wethBond.setStaking(staking.address, stakingHelper.address);
 
     // Initialize sOHM and set the index
     await sOHM.initialize(staking.address);
@@ -135,8 +132,8 @@ async function main() {
     await staking.setContract('0', distributor.address);
     await staking.setContract('1', stakingWarmup.address);
 
-    // Set treasury for OHM token
-    await ohm.setVault(treasury.address);
+    // Set treasury for VCASH token
+    await vcash.setMinter(treasury.address);
 
     // Add staking contract as distributor recipient
     await distributor.addRecipient(staking.address, initialRewardRate);
@@ -153,34 +150,7 @@ async function main() {
     await treasury.queue('4', deployer.address, );
     await treasury.toggle('4', deployer.address, zeroAddress);
 
-    // Approve the treasury to spend DAI and Frax
-    await dai.approve(treasury.address, largeApproval );
-    await frax.approve(treasury.address, largeApproval );
-
-    // Approve dai and frax bonds to spend deployer's DAI and Frax
-    await dai.approve(daiBond.address, largeApproval );
-    await frax.approve(fraxBond.address, largeApproval );
-
-    // Approve staking and staking helper contact to spend deployer's OHM
-    await ohm.approve(staking.address, largeApproval);
-    await ohm.approve(stakingHelper.address, largeApproval);
-
-    // Deposit 9,000,000 DAI to treasury, 600,000 OHM gets minted to deployer and 8,400,000 are in treasury as excesss reserves
-    await treasury.deposit('9000000000000000000000000', dai.address, '8400000000000000');
-
-    // Deposit 5,000,000 Frax to treasury, all is profit and goes as excess reserves
-    await treasury.deposit('5000000000000000000000000', frax.address, '5000000000000000');
-
-    // Stake OHM through helper
-    await stakingHelper.stake('100000000000');
-
-    // Bond 1,000 OHM and Frax in each of their bonds
-    await daiBond.deposit('1000000000000000000000', '60000', deployer.address );
-    await fraxBond.deposit('1000000000000000000000', '60000', deployer.address );
-
-    console.log( "OHM: " + ohm.address );
-    console.log( "DAI: " + dai.address );
-    console.log( "Frax: " + frax.address );
+    console.log( "vcash: " + vcash.address );
     console.log( "Treasury: " + treasury.address );
     console.log( "Calc: " + olympusBondingCalculator.address );
     console.log( "Staking: " + staking.address );
@@ -189,7 +159,7 @@ async function main() {
     console.log( "Staking Warmup " + stakingWarmup.address);
     console.log( "Staking Helper " + stakingHelper.address);
     console.log("DAI Bond: " + daiBond.address);
-    console.log("Frax Bond: " + fraxBond.address);
+    console.log("Weth Bond: " + wethBond.address);
 }
 
 main()
